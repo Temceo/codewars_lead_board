@@ -1,0 +1,22 @@
+body {
+  display: grid;
+  place-content: center;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+main {
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 90%;
+  max-width: 600px;
+}
+
+form label {
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+.leader-board {
+  margin-top: 1rem;
+}

@@ -10,7 +10,33 @@
 </head>
 
 <body>
+  <main>
+    <h1>Codewars Leaderboard</h1>
+    <form>
+      <label for="username">Enter usernames below separated by commas - eg user1, user2, user3 etc</label>
+      <input type="text" name="username" id="username">
+      <button type="submit">Submit</button>
+    </form>
+    <section class="results">
+      <!-- results of search to go here -->
+      <h2>Results</h2>
+      <label for="results-dropdown"></label>
+      <select name="results-dropdown" id="results-dropdown">
+        <option value="overall">Overall rating</option>
+      </select>
+      <!-- leader board table -->
+      <table class="leader-board">
+        <thead>
+          <tr>
+            <th scope="col">Username</th>
+            <th scope="col">Clan</th>
+            <th scope="col">Rating</th>
+          </tr>
+        </thead>
+      </table>
+    </section>
 
+  </main>
 </body>
 
 </html>
