@@ -102,7 +102,6 @@ function getAllLanguages(users) {
 function renderResultsMessage(users, fetchedDetails) {
   const { invalidNames, unprocessedNames, failedNames } = fetchedDetails;
   let messages = [];
-  // results.hidden = false;
 
   if (users.length === 0) {
     messages.push('No users found.');
@@ -199,5 +198,4 @@ resultsDropDown.addEventListener('change', () => {
 list.addEventListener('input', () => {
   resultsMessage.textContent = '';
   tableBody.replaceChildren();
-  // results.hidden = true;
 });
