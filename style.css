@@ -24,3 +24,11 @@ form label {
 .leader-board tbody tr:first-child {
   background-color: bisque;
 }
+/* enables each results message to be shown on a new line */
+#results-message {
+  white-space: pre-line;
+}
+
+#input-error {
+  color: red;
+}
