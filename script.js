@@ -1,5 +1,9 @@
 const form = document.querySelector('form');
 const list = document.getElementById('user-input');
+const resultsDropDown = document.getElementById('results-dropdown');
+const tableBody = document.querySelector('.leader-board tbody');
+
+let validUsers = [];
 
 async function fetchUser(userName) {
   const response = await fetch(
@@ -49,6 +53,19 @@ async function fetchUsers(userNames) {
   return { fetchedDetails };
 }
 
+function normaliseUser(user) {
+  const languages = Object.entries(user.ranks?.languages ?? {}).map(
+    ([language, info]) => ({ language, score: info?.score ?? 0 })
+  );
+
+  return {
+    username: user.username,
+    clan: user.clan ?? null,
+    overallScore: user.ranks?.overall?.score ?? 0,
+    languages,
+  };
+}
+
 async function handleSubmit(e) {
   e.preventDefault();
   const userNames = list.value
@@ -59,67 +76,81 @@ async function handleSubmit(e) {
 
   // fetch users from codewars
   const { fetchedDetails } = await fetchUsers([...new Set(userNames)]);
-  console.log(fetchedDetails);
+  validUsers = fetchedDetails.fetchedUsers
+    .map(normaliseUser)
+    .sort((a, b) => a.overallScore > b.overallScore);
 
   // render valid users on page
+  renderUserDetails(validUsers, fetchedDetails);
+}
+
+function getAllLanguages(users) {
+  const uniqueLanguages = new Set();
+  for (const user of users) {
+    for (const entry of user.languages) {
+      uniqueLanguages.add(entry.language);
+    }
+  }
+
+  return [...uniqueLanguages].sort();
+}
+
+function renderUserDetails(users, fetchedDetails) {
+  populateDropDown(getAllLanguages(users));
+  showRankings(resultsDropDown.value);
+}
+
+function createOption(language) {
+  const option = document.createElement('option');
+  option.value = language;
+  option.textContent = language;
+  return option;
+}
+
+function populateDropDown(languages) {
+  resultsDropDown.replaceChildren(createOption('overall'));
+  for (const language of languages) {
+    resultsDropDown.append(createOption(language));
+  }
+}
+
+function populateTable(rows) {
+  tableBody.replaceChildren();
+  for (const values of rows) {
+    const row = document.createElement('tr');
+
+    for (const value of values) {
+      const cell = document.createElement('td');
+      cell.textContent = value;
+      row.append(cell);
+    }
+    tableBody.append(row);
+  }
+}
+
+function showRankings(option) {
+  const rows = [];
+  for (const user of validUsers) {
+    if (option === 'overall') {
+      rows.push([user.username, user.clan ?? '-', user.overallScore]);
+      continue;
+    }
+
+    const match = user.languages.find((entry) => entry.language === option);
+
+    if (match) {
+      rows.push([user.username, user.clan ?? '-', match.score]);
+    }
+  }
+
+  if (!option === 'overall') {
+    rows.sort((a, b) => a[2] > b[2]);
+  }
+
+  populateTable(rows);
 }
 
 form.addEventListener('submit', handleSubmit);
-
-// const obj = {
-//   id: '5f377b0153f391002e81ee26',
-//   username: 'temceo',
-//   name: null,
-//   honor: 647,
-//   clan: null,
-//   leaderboardPosition: 90415,
-//   skills: null,
-//   ranks: {
-//     overall: {
-//       rank: -5,
-//       name: '5 kyu',
-//       color: 'yellow',
-//       score: 632,
-//     },
-//     languages: {
-//       ruby: {
-//         rank: -8,
-//         name: '8 kyu',
-//         color: 'white',
-//         score: 2,
-//       },
-//       javascript: {
-//         rank: -5,
-//         name: '5 kyu',
-//         color: 'yellow',
-//         score: 622,
-//       },
-//       java: {
-//         rank: -8,
-//         name: '8 kyu',
-//         color: 'white',
-//         score: 13,
-//       },
-//     },
-//   },
-//   codeChallenges: {
-//     totalAuthored: 0,
-//     totalCompleted: 136,
-//   },
-// };
-
-// const overallScore = obj.ranks?.overall?.score ?? 0;
-// const clan = obj?.clan ?? '-';
-// const languages = new Set();
-// const langs = obj.ranks?.languages;
-// for (const lang of Object.keys(langs)) {
-//   languages.add(lang);
-// }
-// const langs_scores = [];
-// for (const [language, result] of Object.entries(langs)) {
-//   langs_scores.push([language, result?.score ?? 0]);
-// }
-// console.log('overall score -->', overallScore);
-// console.log('clan -->', clan);
-// console.log('languages -->', languages);
-// console.log(langs_scores);
+resultsDropDown.addEventListener('change', () => {
+  showRankings(resultsDropDown.value);
+});
