@@ -1,6 +1,8 @@
 const form = document.querySelector('form');
 const list = document.getElementById('user-input');
 const resultsDropDown = document.getElementById('results-dropdown');
+const resultsMessage = document.getElementById('results-message');
+const inputError = document.getElementById('input-error');
 const tableBody = document.querySelector('.leader-board tbody');
 
 let validUsers = [];
@@ -32,8 +34,6 @@ async function fetchUsers(userNames) {
       fetchedDetails.fetchedUsers.push(await fetchUser(name));
     } catch (error) {
       if (error.status === 429) {
-        console.log(`Too many requests.  Rate limited (${error.message})`);
-        // showToast(`Too many requests.  Rate limited (${error.message})`);
         fetchedDetails.unprocessedNames.push({ name, message: error.message });
         continue;
       }
@@ -42,11 +42,6 @@ async function fetchUsers(userNames) {
         fetchedDetails.invalidNames.push(name);
       } else {
         fetchedDetails.failedNames.push(name);
-      }
-      const failedNames = fetchedDetails.failedNames;
-      if (failedNames.length > 0) {
-        console.log(`Failed to fetch: ${failedNames.join(', ')}`);
-        // showToast(`Failed to fetch: ${failedNames.join(', ')}`);
       }
     }
   }
@@ -68,6 +63,14 @@ function normaliseUser(user) {
 
 async function handleSubmit(e) {
   e.preventDefault();
+  resultsMessage.textContent = '';
+  inputError.textContent = '';
+  if (list.value === '') {
+    tableBody.replaceChildren();
+    inputError.textContent =
+      'No input entered.  Please add usernames before submitting.';
+    return;
+  }
   const userNames = list.value
     .split(',')
     .map((name) => name.trim())
@@ -78,8 +81,9 @@ async function handleSubmit(e) {
   const { fetchedDetails } = await fetchUsers([...new Set(userNames)]);
   validUsers = fetchedDetails.fetchedUsers
     .map(normaliseUser)
-    .sort((a, b) => a.overallScore > b.overallScore);
+    .sort((a, b) => b.overallScore - a.overallScore);
 
+  console.log(validUsers);
   // render valid users on page
   renderUserDetails(validUsers, fetchedDetails);
 }
@@ -95,9 +99,46 @@ function getAllLanguages(users) {
   return [...uniqueLanguages].sort();
 }
 
+function renderResultsMessage(users, fetchedDetails) {
+  const { invalidNames, unprocessedNames, failedNames } = fetchedDetails;
+  let messages = [];
+  // results.hidden = false;
+
+  if (users.length === 0) {
+    messages.push('No users found.');
+    results.hidden = true;
+  } else if (users.length === 1) {
+    messages.push('1 user found.');
+  } else {
+    messages.push(`${users.length} users found.`);
+  }
+  if (invalidNames.length === 1) {
+    messages.push(`${invalidNames[0]} is an invalid username`);
+  } else if (invalidNames.length > 1) {
+    const last = invalidNames.at(-1);
+    const allButLast = invalidNames.slice(0, -1).join(', ');
+    messages.push(`${allButLast} and ${last} are invalid usernames`);
+  }
+
+  if (unprocessedNames.length > 0) {
+    messages.push(
+      `Could not process due to too many calls: ${fetchedDetails.unprocessedNames.map(({ name, error }) => `${name}: ${error}`).join(', ')}`
+    );
+  }
+
+  if (failedNames.length > 0) {
+    messages.push(
+      `Failed to fetch these names: ${fetchedDetails.failedNames.join(', ')}`
+    );
+  }
+
+  resultsMessage.textContent = messages.join('\n');
+}
+
 function renderUserDetails(users, fetchedDetails) {
   populateDropDown(getAllLanguages(users));
   showRankings(resultsDropDown.value);
+  renderResultsMessage(users, fetchedDetails);
 }
 
 function createOption(language) {
@@ -153,4 +194,10 @@ function showRankings(option) {
 form.addEventListener('submit', handleSubmit);
 resultsDropDown.addEventListener('change', () => {
   showRankings(resultsDropDown.value);
+});
+
+list.addEventListener('input', () => {
+  resultsMessage.textContent = '';
+  tableBody.replaceChildren();
+  // results.hidden = true;
 });
